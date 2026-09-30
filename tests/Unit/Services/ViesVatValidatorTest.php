@@ -110,3 +110,40 @@ test('throws exception when valid field is missing', function () {
     expect(fn () => $validator->validate('DE', '123456789'))
         ->toThrow(VatValidationException::class, 'missing valid field');
 });
+
+test('treats an answer VIES could not give as unavailable, not invalid', function (string $userError) {
+    Http::fake([
+        'ec.europa.eu/*' => Http::response([
+            'countryCode' => 'DE',
+            'vatNumber' => '123456789',
+            'valid' => false,
+            'userError' => $userError,
+            'name' => '---',
+            'address' => '---',
+        ]),
+    ]);
+
+    $validator = new ViesVatValidator();
+
+    expect(fn () => $validator->validate('DE', '123456789'))
+        ->toThrow(function (VatValidationException $e) use ($userError) {
+            expect($e->getCode())->toBe(503)
+                ->and($e->getMessage())->toContain($userError);
+        });
+})->with(['MS_UNAVAILABLE', 'SERVICE_UNAVAILABLE', 'TIMEOUT', 'MS_MAX_CONCURRENT_REQ', 'GLOBAL_MAX_CONCURRENT_REQ']);
+
+test('reads the definitive userError answers as the number\'s status', function (bool $valid, string $userError) {
+    Http::fake([
+        'ec.europa.eu/*' => Http::response([
+            'valid' => $valid,
+            'userError' => $userError,
+        ]),
+    ]);
+
+    $result = (new ViesVatValidator())->validate('DE', '123456789');
+
+    expect($result->valid)->toBe($valid);
+})->with([
+    'valid' => [true, 'VALID'],
+    'invalid' => [false, 'INVALID'],
+]);
