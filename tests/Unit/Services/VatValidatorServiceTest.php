@@ -2,8 +2,11 @@
 
 declare(strict_types=1);
 
+use Illuminate\Cache\ArrayStore;
+use Illuminate\Cache\Repository as CacheRepository;
 use Veltix\TaxEngine\Contracts\VatValidatorContract;
 use Veltix\TaxEngine\Data\VatValidationResultData;
+use Veltix\TaxEngine\Services\CachingVatValidator;
 use Veltix\TaxEngine\Services\VatValidatorService;
 
 test('returns invalid for bad format without calling driver', function () {
@@ -68,4 +71,32 @@ test('returns invalid when country code cannot be determined', function () {
 
     expect($result->valid)->toBeFalse()
         ->and($result->failureReason)->toContain('Could not determine');
+});
+
+test('a fresh check asks past the cache and a normal one reads it', function () {
+    $inner = Mockery::mock(VatValidatorContract::class);
+    $inner->shouldReceive('validate')
+        ->twice()
+        ->with('DE', '123456789')
+        ->andReturn(
+            VatValidationResultData::validResult('DE', '123456789'),
+            VatValidationResultData::invalid('DE', '123456789', 'Deregistered'),
+        );
+
+    $service = new VatValidatorService(new CachingVatValidator($inner, new CacheRepository(new ArrayStore()), 3600));
+
+    expect($service->validate('DE123456789')->valid)->toBeTrue()
+        ->and($service->validate('DE123456789')->valid)->toBeTrue()
+        ->and($service->validate('DE123456789', fresh: true)->valid)->toBeFalse()
+        ->and($service->validate('DE123456789')->valid)->toBeFalse();
+});
+
+test('a fresh check asks an uncached validator as usual', function () {
+    $inner = Mockery::mock(VatValidatorContract::class);
+    $inner->shouldReceive('validate')
+        ->once()
+        ->with('DE', '123456789')
+        ->andReturn(VatValidationResultData::validResult('DE', '123456789'));
+
+    expect((new VatValidatorService($inner))->validate('DE123456789', fresh: true)->valid)->toBeTrue();
 });

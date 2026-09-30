@@ -18,17 +18,27 @@ final class CachingVatValidator implements VatValidatorContract
 
     public function validate(string $countryCode, string $vatNumber): VatValidationResultData
     {
-        $key = $this->cacheKey($countryCode, $vatNumber);
-
-        $cached = $this->cache->get($key);
+        $cached = $this->cache->get($this->cacheKey($countryCode, $vatNumber));
 
         if ($cached instanceof VatValidationResultData) {
             return $cached;
         }
 
+        return $this->refresh($countryCode, $vatNumber);
+    }
+
+    /**
+     * Asks the inner validator even while an answer is cached, and caches the new one.
+     * Use it where a stale answer costs money, such as when an order is placed.
+     *
+     * Only answers are cached: a validator that could not check the number throws
+     * (VIES "member state unavailable" included), and nothing is stored.
+     */
+    public function refresh(string $countryCode, string $vatNumber): VatValidationResultData
+    {
         $result = $this->inner->validate($countryCode, $vatNumber);
 
-        $this->cache->put($key, $result, $this->ttl);
+        $this->cache->put($this->cacheKey($countryCode, $vatNumber), $result, $this->ttl);
 
         return $result;
     }

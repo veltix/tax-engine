@@ -14,6 +14,13 @@ final class ViesVatValidator implements VatValidatorContract
 {
     private const string VIES_URL = 'https://ec.europa.eu/taxation_customs/vies/rest-api/check-vat-number';
 
+    /**
+     * The only userError values that carry an answer about the number. Any other one
+     * (MS_UNAVAILABLE, TIMEOUT, SERVICE_UNAVAILABLE, MS_MAX_CONCURRENT_REQ, ...) comes
+     * with "valid": false although VIES never checked the number.
+     */
+    private const array DEFINITIVE_ANSWERS = ['VALID', 'INVALID'];
+
     public function __construct(
         private readonly int $timeout = 10,
     ) {}
@@ -35,6 +42,14 @@ final class ViesVatValidator implements VatValidatorContract
             }
 
             $data = $response->json();
+
+            $userError = $data['userError'] ?? null;
+
+            if (is_string($userError) && ! in_array($userError, self::DEFINITIVE_ANSWERS, true)) {
+                throw VatValidationException::serviceUnavailable(
+                    "VIES could not check the number: {$userError}"
+                );
+            }
 
             if (! isset($data['valid'])) {
                 throw VatValidationException::serviceError('VIES response missing valid field');

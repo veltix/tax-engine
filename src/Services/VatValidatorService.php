@@ -14,7 +14,10 @@ final class VatValidatorService
         private readonly VatValidatorContract $validator,
     ) {}
 
-    public function validate(string $vatNumber, ?string $countryCode = null): VatValidationResultData
+    /**
+     * @param bool $fresh ask the validator even while it holds a cached answer (see CachingVatValidator::refresh())
+     */
+    public function validate(string $vatNumber, ?string $countryCode = null, bool $fresh = false): VatValidationResultData
     {
         [$parsedCountry, $parsedNumber] = VatFormatValidator::parse($vatNumber, $countryCode);
 
@@ -42,6 +45,10 @@ final class VatValidatorService
                 $parsedNumber,
                 "Country {$parsedCountry} is not an EU member state; VIES validation is not available",
             );
+        }
+
+        if ($fresh && $this->validator instanceof CachingVatValidator) {
+            return $this->validator->refresh($parsedCountry, $parsedNumber);
         }
 
         return $this->validator->validate($parsedCountry, $parsedNumber);
