@@ -20,6 +20,14 @@ it('throws InsufficientEvidenceException in strict mode with fewer than 2 signal
     $this->service->validate($evidence, 'strict');
 })->throws(InsufficientEvidenceException::class);
 
+it('throws InsufficientEvidenceException in strict mode with no signals', function () {
+    $this->service->validate(EvidenceData::empty(), 'strict');
+})->throws(InsufficientEvidenceException::class, '0 signal(s) provided, minimum 2 required');
+
+it('throws InsufficientEvidenceException in tolerant mode with no signals', function () {
+    $this->service->validate(EvidenceData::empty(), 'tolerant');
+})->throws(InsufficientEvidenceException::class, '0 signal(s) provided, minimum 1 required');
+
 it('throws EvidenceConflictException in strict mode when signals conflict', function () {
     $evidence = EvidenceData::fromItems(
         EvidenceItemData::billingAddress('DE'),

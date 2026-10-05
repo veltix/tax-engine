@@ -10,7 +10,7 @@ final class LargestRemainderAllocator
      * Distribute an integer total across items using the largest remainder method.
      *
      * @param  int      $total             The total to distribute (in minor units)
-     * @param  string[] $exactFractional   Exact unrounded amounts as bcmath strings
+     * @param  numeric-string[] $exactFractional   Exact unrounded amounts as bcmath strings
      * @return int[]                       Allocated amounts in original input order
      */
     public static function allocate(int $total, array $exactFractional): array

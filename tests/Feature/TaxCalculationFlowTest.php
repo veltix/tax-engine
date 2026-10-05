@@ -171,6 +171,7 @@ it('calculates correct effective rate across different countries', function (str
     ['LU', '17.00', 1700],
     ['SE', '25.00', 2500],
     ['FI', '25.50', 2550],
+    ['RO', '21.00', 2100],
 ]);
 
 it('uses TransactionData::from for array-based input', function () {

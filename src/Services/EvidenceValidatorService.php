@@ -17,7 +17,7 @@ final class EvidenceValidatorService
     public function validate(EvidenceData $evidence, string $mode = 'strict'): ResolvedCountryDecisionData
     {
         $countries = $evidence->countrySignals();
-        $majorityCountry = $this->majorityCountry($evidence);
+        $majorityCountry = $this->majorityCountry($evidence, $mode);
 
         if ($mode === 'strict') {
             if ($evidence->count() < 2) {
@@ -87,7 +87,7 @@ final class EvidenceValidatorService
         );
     }
 
-    private function majorityCountry(EvidenceData $evidence): string
+    private function majorityCountry(EvidenceData $evidence, string $mode): string
     {
         $counts = array_count_values(
             array_map(fn (EvidenceItemData $item) => $item->resolvedCountryCode, $evidence->items),
@@ -95,6 +95,12 @@ final class EvidenceValidatorService
 
         arsort($counts);
 
-        return array_key_first($counts);
+        $majority = array_key_first($counts);
+
+        if ($majority === null) {
+            throw InsufficientEvidenceException::minimumNotMet($mode === 'strict' ? 2 : 1, 0);
+        }
+
+        return $majority;
     }
 }
