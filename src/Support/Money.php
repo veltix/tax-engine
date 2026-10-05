@@ -26,6 +26,9 @@ final readonly class Money
         return new self($cents, $currency, $precision);
     }
 
+    /**
+     * @param  numeric-string  $decimal
+     */
     public static function fromDecimal(
         string $decimal,
         string $currency = 'EUR',

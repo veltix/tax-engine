@@ -72,15 +72,11 @@ final readonly class EvidenceData
 
     public function matchingCountryCount(): int
     {
-        if ($this->isEmpty()) {
-            return 0;
-        }
-
         $counts = array_count_values(
             array_map(fn (EvidenceItemData $item) => $item->resolvedCountryCode, $this->items)
         );
 
-        return max($counts);
+        return $counts === [] ? 0 : max($counts);
     }
 
     /** @return list<array<string, mixed>> */
