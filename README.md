@@ -4,8 +4,8 @@ A Laravel package for EU tax/VAT calculation with support for OSS, IOSS, reverse
 
 ## Requirements
 
-- PHP 8.2+
-- Laravel 11 or 12
+- PHP 8.3+
+- Laravel 12 or 13
 - `ext-bcmath`
 
 ## Installation
@@ -66,6 +66,10 @@ $result->taxAmount;    // Money object with calculated tax
 $result->grossAmount;  // Net + tax
 $result->decision;     // TaxDecisionData with scheme, rate, reasoning
 ```
+
+## VAT Rates
+
+The built-in `StaticRateRepository` uses the EU VAT rates in `EuVatRates` (rate table version `2026.1`, rates in force on 2026-10-05). The table holds current rates only; it does not give a past date its old rate. Sources and the dates of recent changes are in [docs/rates-sources.md](docs/rates-sources.md). To use your own rates, bind your own `RateRepositoryContract` implementation.
 
 ## Available Rules
 
